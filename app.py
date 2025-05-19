@@ -55,7 +55,9 @@ cols1.plotly_chart(fig_bar)
 
 #histograma
 
-df_marca_filtered_hist = df_marca_filtered.dropna(subset='model_year')
+df_marca_filtered_hist = df_marca_filtered.dropna(subset='model_year').reset_index(drop= True)
+
+df_marca_filtered_hist.index = df_marca_filtered_hist.index + 1
 
 
 fig_histograma = px.histogram(
