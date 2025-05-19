@@ -52,18 +52,6 @@ list_transmission = st.sidebar.multiselect("Selecione uma Transmissão", transmi
 
 
 
-if list_types:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['type'].isin(list_types)]
-
-if list_condition:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['condition'].isin(list_condition)]
-
-if list_transmission:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['transmission'].isin(list_transmission)]
-    
-if list_marca:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['marca'].isin(list_marca)]
-
 
 
 #preco range
@@ -92,6 +80,25 @@ odometer_range = st.sidebar.slider(
 )
 
 df_marca_filtered = df_marca_filtered[(df_marca_filtered['odometer'] >= odometer_range[0]) & (df_marca_filtered['odometer'] <= odometer_range[1])]
+
+
+
+
+#Config
+if list_types:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['type'].isin(list_types)]
+
+if list_condition:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['condition'].isin(list_condition)]
+
+if list_transmission:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['transmission'].isin(list_transmission)]
+    
+if list_marca:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['marca'].isin(list_marca)]
+
+
+
 
 
 #Botão 
