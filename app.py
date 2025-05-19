@@ -26,6 +26,9 @@ df_count_marca = df['marca'].value_counts()
 min_ads = st.slider("Minimo de anuncios: ", 0, df_count_marca.max(), 1000)
 df_list_marca = df_count_marca[df_count_marca >= min_ads].index
 
+
+
+
 #Filtros visu
 st.sidebar.header("Filtros")
 
@@ -40,10 +43,12 @@ transmission = df_marca_filtered['transmission'].unique().tolist()
 marca = df_marca_filtered['marca'].unique().tolist()
 
 
+
+
+list_marca = st.sidebar.multiselect("Selecione uma Marca", marca)
 list_types = st.sidebar.multiselect("Selecione um Modelo", modelos)
 list_condition = st.sidebar.multiselect("Selecione uma Condição", condition)
 list_transmission = st.sidebar.multiselect("Selecione uma Transmissão", transmission)
-list_marca = st.sidebar.multiselect("Selecione uma Marca", marca)
 
 
 
@@ -58,6 +63,35 @@ if list_transmission:
     
 if list_marca:
     df_marca_filtered = df_marca_filtered[df_marca_filtered['marca'].isin(list_marca)]
+
+
+
+#preco range
+min_preco = df_marca_filtered['price'].min()
+max_preco = df_marca_filtered['price'].max()
+preco_range = st.sidebar.slider(
+    "Selecione um intervalo de preço",
+    min_value= int(min_preco),
+    max_value= int(max_preco),
+    value= (int(min_preco), int(max_preco)),
+    step= 1000
+)
+
+df_marca_filtered = df_marca_filtered[(df_marca_filtered['price'] >= preco_range[0]) & (df['price'] <= preco_range[1])]
+
+#Odometer Range
+min_odometer = df_marca_filtered['odometer'].min()
+max_odometer = df_marca_filtered['odometer'].max()
+
+odometer_range = st.sidebar.slider(
+    "Selecione um intervalo de odometer",
+    min_value= int(min_odometer),
+    max_value= int(max_odometer),
+    value= (int(min_odometer), int(max_odometer)),
+    step= 100
+)
+
+df_marca_filtered = df_marca_filtered[(df_marca_filtered['odometer'] >= odometer_range[0]) & (df_marca_filtered['odometer'] <= odometer_range[1])]
 
 
 #Botão 
@@ -82,7 +116,9 @@ fig_bar = px.bar(
     x= 'marca',
     y= 'quantidade',
     title= "Marcas e Quantidade",
-    color= "type"
+    color= "type",
+    color_discrete_sequence=px.colors.qualitative.Plotly
+
 )
 
 cols1.plotly_chart(fig_bar)
