@@ -26,7 +26,41 @@ df_count_marca = df['marca'].value_counts()
 min_ads = st.slider("Minimo de anuncios: ", 0, df_count_marca.max(), 1000)
 df_list_marca = df_count_marca[df_count_marca >= min_ads].index
 
+#Filtros visu
+st.sidebar.header("Filtros")
+
+
+
+
+#Filtros
 df_marca_filtered = df[df['marca'].isin(df_list_marca)]
+modelos = df_marca_filtered['type'].unique().tolist()
+condition = df_marca_filtered['condition'].unique().tolist()
+transmission = df_marca_filtered['transmission'].unique().tolist()
+marca = df_marca_filtered['marca'].unique().tolist()
+
+
+list_types = st.sidebar.multiselect("Selecione um Modelo", modelos)
+list_condition = st.sidebar.multiselect("Selecione uma Condição", condition)
+list_transmission = st.sidebar.multiselect("Selecione uma Transmissão", transmission)
+list_marca = st.sidebar.multiselect("Selecione uma Marca", marca)
+
+
+
+if list_types:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['type'].isin(list_types)]
+
+if list_condition:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['condition'].isin(list_condition)]
+
+if list_transmission:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['transmission'].isin(list_transmission)]
+    
+if list_marca:
+    df_marca_filtered = df_marca_filtered[df_marca_filtered['marca'].isin(list_marca)]
+
+
+#Botão 
 
 button_table = st.button("Mostrar Tabela?")
 
