@@ -14,7 +14,7 @@ def load_data():
     data['is_4wd'] = data['is_4wd'].fillna(0.0)
     data['paint_color'] = data['paint_color'].fillna('unknown')
     data['prob_cylinders'] = data['cylinders'].fillna(data.groupby('model')['cylinders'].transform(lambda x: x.mode()[0]))
-    data['model_year'] = data['model_year'].fillna(-1) 
+    data['date_posted'] = pd.to_datetime(data['date_posted'])
     return data
 
 
@@ -55,8 +55,7 @@ cols1.plotly_chart(fig_bar)
 
 #histograma
 
-df_marca_filtered_hist = df_marca_filtered[df_marca_filtered['model_year'] != -1].reset_index(drop= True)
-df_marca_filtered_hist.index = df_marca_filtered_hist.index + 1
+df_marca_filtered_hist = df_marca_filtered.dropna(subset='model_year')
 
 
 fig_histograma = px.histogram(
