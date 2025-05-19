@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd 
 import plotly.express as px
 
-st.set_page_config(layout= "wide")
+st.set_page_config(layout="wide")
 st.title("Data View")
 st.header("Anuncios de Carros")
-
 
 @st.cache_data
 def load_data():
@@ -17,175 +16,93 @@ def load_data():
     data['date_posted'] = pd.to_datetime(data['date_posted'])
     return data
 
-
 df = load_data()
 
+# Filtros
+min_ads = st.slider("Minimo de anuncios: ", 0, df['marca'].value_counts().max(), 1000)
+df_list_marca = df['marca'].value_counts()[df['marca'].value_counts() >= min_ads].index
 
-df_count_marca = df['marca'].value_counts()
-
-min_ads = st.slider("Minimo de anuncios: ", 0, df_count_marca.max(), 1000)
-df_list_marca = df_count_marca[df_count_marca >= min_ads].index
-
-
-
-
-#Filtros visu
 st.sidebar.header("Filtros")
+list_marca = st.sidebar.multiselect("Selecione uma Marca", df_list_marca)
+list_types = st.sidebar.multiselect("Selecione um Modelo", df['type'].unique())
+list_condition = st.sidebar.multiselect("Selecione uma Condição", df['condition'].unique())
+list_transmission = st.sidebar.multiselect("Selecione uma Transmissão", df['transmission'].unique())
+
+preco_range = st.sidebar.slider("Selecione um intervalo de preço", 
+                                int(df['price'].min()), 
+                                int(df['price'].max()), 
+                                (int(df['price'].min()), int(df['price'].max())),
+                                1000)
+
+odometer_range = st.sidebar.slider("Selecione um intervalo de odometer", 
+                                   int(df['odometer'].min()), 
+                                   int(df['odometer'].max()), 
+                                   (int(df['odometer'].min()), int(df['odometer'].max())),
+                                   100)
 
 
 
-
-#Filtros
-df_marca_filtered = df[df['marca'].isin(df_list_marca)]
-modelos = df_marca_filtered['type'].unique().tolist()
-condition = df_marca_filtered['condition'].unique().tolist()
-transmission = df_marca_filtered['transmission'].unique().tolist()
-marca = df_marca_filtered['marca'].unique().tolist()
+df = df[df['marca'].isin(df_list_marca)]
 
 
 
+# Aplicando filtros
+df_filtered = df[
+    (df['marca'].isin(list_marca) if list_marca else True) &
+    (df['type'].isin(list_types) if list_types else True) &
+    (df['condition'].isin(list_condition) if list_condition else True) &
+    (df['transmission'].isin(list_transmission) if list_transmission else True) &
+    (df['price'].between(preco_range[0], preco_range[1])) &
+    (df['odometer'].between(odometer_range[0], odometer_range[1]))
+]
 
-list_marca = st.sidebar.multiselect("Selecione uma Marca", marca)
-list_types = st.sidebar.multiselect("Selecione um Modelo", modelos)
-list_condition = st.sidebar.multiselect("Selecione uma Condição", condition)
-list_transmission = st.sidebar.multiselect("Selecione uma Transmissão", transmission)
+# Botão para mostrar tabela
+if st.button("Mostrar Tabela"):
+    st.write("Tabela De Anuncios:")
+    st.dataframe(df_filtered)
 
+# Container para botões de gráficos
+st.header("Visualizações Interativas")
+col1, col2 = st.columns(2)
 
+with col1:
+    if st.button("Gerar Histograma"):
+        fig_hist = px.histogram(df_filtered, x="model_year", color="condition", title="Distribuição de Ano do Modelo por Condição", color_discrete_sequence=px.colors.qualitative.Plotly)
+        
+        st.plotly_chart(fig_hist, use_container_width=True)
 
+with col2:
+    if st.button("Gerar Gráfico de Dispersão"):
+        fig_scatter = px.scatter(df_filtered, x="odometer", y="price", title="Relação entre Quilometragem e Preço", color_discrete_sequence=px.colors.qualitative.Plotly)
+        
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
+# Container para gráficos adicionais com checkboxes
+st.header("Análises Detalhadas")
+col3, col4, col5 = st.columns(3)
 
-#preco range
-min_preco = df_marca_filtered['price'].min()
-max_preco = df_marca_filtered['price'].max()
-preco_range = st.sidebar.slider(
-    "Selecione um intervalo de preço",
-    min_value= int(min_preco),
-    max_value= int(max_preco),
-    value= (int(min_preco), int(max_preco)),
-    step= 1000
-)
+with col3:
+    if st.checkbox("Mostrar Distribuição por Marca/Modelo"):
+        df_plot = df_filtered.groupby(['marca', 'type']).size().reset_index(name="quantidade")
+        
+        fig_bar = px.bar(df_plot, x='marca', y='quantidade', color='type', title="Distribuição de Veículos por Marca e Modelo", color_discrete_sequence=px.colors.qualitative.Plotly)
+        
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-df_marca_filtered = df_marca_filtered[(df_marca_filtered['price'] >= preco_range[0]) & (df['price'] <= preco_range[1])]
+with col4:
+    if st.checkbox("Mostrar Distribuição 4x4"):
+        count_4x4 = df_filtered.groupby('is_4wd').size().reset_index(name='quantidade')
+        count_4x4['is_4wd'] = count_4x4['is_4wd'].map({1.0: '4x4', 0.0: 'Não 4x4'})
+        
+        fig_4x4 = px.bar(count_4x4, x='is_4wd', y='quantidade', title="Proporção de Veículos com Tração 4x4", color_discrete_sequence=px.colors.qualitative.Plotly, color= 'is_4wd')
+        
+        
+        st.plotly_chart(fig_4x4, use_container_width=True)
 
-#Odometer Range
-min_odometer = df_marca_filtered['odometer'].min()
-max_odometer = df_marca_filtered['odometer'].max()
-
-odometer_range = st.sidebar.slider(
-    "Selecione um intervalo de odometer",
-    min_value= int(min_odometer),
-    max_value= int(max_odometer),
-    value= (int(min_odometer), int(max_odometer)),
-    step= 100
-)
-
-df_marca_filtered = df_marca_filtered[(df_marca_filtered['odometer'] >= odometer_range[0]) & (df_marca_filtered['odometer'] <= odometer_range[1])]
-
-
-
-
-#Config
-if list_types:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['type'].isin(list_types)]
-
-if list_condition:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['condition'].isin(list_condition)]
-
-if list_transmission:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['transmission'].isin(list_transmission)]
-    
-if list_marca:
-    df_marca_filtered = df_marca_filtered[df_marca_filtered['marca'].isin(list_marca)]
-
-
-
-#Botão 
-
-button_table = st.button("Mostrar Tabela?")
-
-if button_table:
-    st.write("Tabela De Anuncios: ")
-    df_marca_filtered
-
-
-
-cols1, cols2 = st.columns(2)
-cols3, cols4, cols5 = st.columns(3)
-
-
-
-df_plot_marca = df_marca_filtered.groupby(['marca', 'type']).size().reset_index(name= "quantidade")
-
-fig_bar = px.bar(
-    df_plot_marca,
-    x= 'marca',
-    y= 'quantidade',
-    title= "Marcas e Quantidade",
-    color= "type",
-    color_discrete_sequence=px.colors.qualitative.Plotly
-
-)
-
-cols1.plotly_chart(fig_bar)
-
-#histograma
-
-df_marca_filtered_hist = df_marca_filtered.dropna(subset='model_year').reset_index(drop= True)
-
-df_marca_filtered_hist.index = df_marca_filtered_hist.index + 1
-
-
-fig_histograma = px.histogram(
-    df_marca_filtered_hist,
-    title= "Ano do Modelo e Condição",
-    x= 'model_year',
-    color= 'condition',
-    color_discrete_sequence=px.colors.qualitative.Plotly
-)
-
-cols2.plotly_chart(fig_histograma)
-
-
-#Grafico de Dispersão
-
-fig_dispersion = px.scatter(
-    df_marca_filtered,
-    x= 'odometer',
-    y= 'price',
-    title= "Grafico de Disperção",
-    color_discrete_sequence=px.colors.qualitative.Plotly
-
-)
-
-cols3.plotly_chart(fig_dispersion)
-
-#Condition_transmission_bar
-
-condition_transmission = df_marca_filtered.groupby(['condition', 'transmission']).size().reset_index(name='quantidade')
-
-fig_condition_transmission = px.bar(
-    condition_transmission,
-    x='condition',
-    y='quantidade',
-    color='transmission',
-    title='Distribuição de Condição por Tipo de Transmissão',
-    color_discrete_sequence=px.colors.qualitative.Plotly
-)
-
-cols4.plotly_chart(fig_condition_transmission)
-
-#Rodas 4x4
-count_4x4 = df_marca_filtered.groupby('is_4wd').size().reset_index(name= 'quantidade')
-count_4x4['is_4wd'] = count_4x4['is_4wd'].map(lambda x: '4x4' if x == 1.0 else 'Não 4x4')
-
-
-fig_barras = px.bar(
-    count_4x4,
-    x='is_4wd',
-    y='quantidade',
-    title='Proporção de Veículos com Tração 4x4',
-    color='is_4wd',
-    color_discrete_sequence=px.colors.qualitative.Plotly
-)
-
-cols5.plotly_chart(fig_barras)
+with col5:
+    if st.checkbox("Mostrar Condição por Transmissão"):
+        cond_trans = df_filtered.groupby(['condition', 'transmission']).size().reset_index(name='quantidade')
+        
+        fig_cond = px.bar(cond_trans, x= 'condition', y= 'quantidade', color= 'transmission', title= "Distribuição de Condição por Transmissão", color_discrete_sequence=px.colors.qualitative.Plotly)
+        
+        st.plotly_chart(fig_cond, use_container_width=True)
