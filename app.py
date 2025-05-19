@@ -99,8 +99,6 @@ if list_marca:
 
 
 
-
-
 #Botão 
 
 button_table = st.button("Mostrar Tabela?")
